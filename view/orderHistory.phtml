@@ -1,0 +1,121 @@
+<?php
+require_once('view/header.phtml');
+
+if(isset($_SESSION['login'])){
+$product = new products();
+
+if(isset($_GET["orderId"])){
+    ?>
+<br>
+<div class="container">
+    <div style="" class="alert alert-warning" role="alert">
+        <center><a href="orderHistory.php" class="btn-block btn-warning btn-lg "><i class="fa fa-history"></i> Return to Order History</a></center>
+    </div>
+    <hr>
+    <table class="table table-responsive-lg table-striped table-dark">
+        <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Product Name</th>
+            <th scope="col">Size</th>
+            <th scope="col">Price</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">SubTotal</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php
+        $orderLineInfo = $product->getOrderLine($_GET["orderId"]);
+        $n = $orderLineInfo->rowCount();
+
+        $total = 0;
+        for($i = 0;$i<$n;$i++){
+        $orderLine = $orderLineInfo->fetch(PDO::FETCH_ASSOC);
+
+        $getProd = $product->getProductInfo($orderLine['productId']);
+        $prodInfo = $getProd->fetch(PDO::FETCH_ASSOC);
+
+        $total = $total + $orderLine['lineCost'];
+
+        ?>
+        <tr>
+            <th scope="row"><?php echo $i+1 ?></th>
+            <td><?php echo $prodInfo['productTitle'] . " " . $prodInfo['productSubtitle']  ?></td>
+            <td><?php echo $orderLine['shoeSize'] ?></td>
+            <td><?php echo $prodInfo['Price'] ?></td>
+            <td><?php echo $orderLine['Quantity'] ?></td>
+            <td><?php echo $orderLine['lineCost'] ?></td>
+        </tr>
+            <?php } ?>
+        <tr>
+            <th scope="row"></th>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td class="table-secondary"><strong class="text-dark" style="padding-left: 70%">Total:</strong></td>
+            <td class="table-secondary"><strong class="text-dark"><?php echo $total ?></strong></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<?php
+
+}
+else{
+
+
+
+$custInfo = $product->getCustomer($_SESSION['id']);
+$custId = $custInfo->fetch(PDO::FETCH_ASSOC);
+$orders = $product->getCustOrders($custId['customerId']);
+
+$n = $orders->rowCount();
+?>
+<br>
+<div class="container">
+    <div style="" class="alert alert-info" role="alert">
+        <center><h3 class="alert-heading "><i class="fa fa-history"></i> Order History</h3></center>
+    </div>
+    <hr>
+    <table class="table table-responsive-lg table-striped table-dark">
+        <thead>
+        <tr>
+            <th scope="col">Order Number</th>
+            <th scope="col">Purchase Date</th>
+            <th scope="col">Order Total</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <?php
+        for($i = 0;$i<$n;$i++){
+        $custOrders = $orders->fetch(PDO::FETCH_ASSOC);
+
+        ?>
+            <tr>
+                <th scope="row"><?php echo $custOrders['orderId'] ?></th>
+                <td><?php echo $custOrders['orderDate'] ?></td>
+                <td><?php echo $custOrders['orderTotal'] ?></td>
+                <td><center><a href="orderHistory.php?orderId=<?php echo $custOrders['orderId'] ?>" class=" btn-sm btn-block btn-primary"><i class="fa fa-th-list "></i> View Order Details</a></center></td>
+        <?php } ?>
+        </tbody>
+    </table>
+</div>
+
+
+
+    <?php
+    }
+    }
+else{
+    ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Please <a href="login.php">Log in</a> to view this page</strong>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <?php
+}
+    require('view/footer.phtml');
+    ?>

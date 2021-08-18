@@ -1,0 +1,178 @@
+<?php
+require_once('view/header.phtml');
+require_once('model/basket.php');
+
+$product = new products();
+$basket = new basket();
+if(isset($_SESSION['login']))
+{
+
+    if(isset($_POST['remove'])){
+        $removeProd = $basket->removeBasket($_POST['remove']);
+
+        ?>
+        <script type="text/javascript">
+            window.location.href = 'basketView.php';
+        </script>
+        <?php
+    }
+
+    if(isset($_POST['buy'])){
+        $custInfo = $product->getCustomer($_SESSION['id']);
+        $custId = $custInfo->fetch(PDO::FETCH_ASSOC);
+        $basket->addBasketOrder($custId['customerId']);
+
+        ?>
+        <script type="text/javascript">
+            window.location.href = 'checkoutSuccessful.php';
+        </script>
+        <?php
+    }
+
+    ?>
+<br>
+
+<div class="container">
+    <div style="" class="alert alert-info" role="alert">
+        <center><h3 class="alert-heading "><i class="fa fa-shopping-bag"></i> Your Basket</h3></center>
+    </div>
+<!--    <h3>Shopping basket</h3>-->
+    <hr>
+<table class="table table-responsive-lg table-striped table-dark">
+    <thead>
+    <tr>
+        <th scope="col">#</th>
+        <th scope="col">Brand</th>
+        <th scope="col">Product Name</th>
+        <th scope="col">Size</th>
+        <th scope="col">Price</th>
+        <th scope="col">Quantity</th>
+        <th scope="col">Sub Total</th>
+    </tr>
+    </thead>
+    <tbody>
+    <?php
+    $Total = 0;
+    for ($i=0; $i<count($_SESSION['basketProds']); $i++)
+    {
+        $fetchBasketProds = $product->getProductInfo($_SESSION['basketProds'][$i]);
+        $BasketProds = $fetchBasketProds->fetch(PDO::FETCH_ASSOC);
+        $brand = $BasketProds['productTitle'];
+        $prodName = $BasketProds['productSubtitle'];
+        $size  = $_SESSION['basketProdsSize'][$i];
+        $price = $BasketProds['Price'];
+        $qty  = $_SESSION['basketProdsQty'][$i];
+        $subtotal = $price * $qty;
+        $Total = $Total+$subtotal;
+
+?>
+
+    <tr>
+        <th scope="row"><?php echo $i+1 ?></th>
+        <td><?php echo $brand ?></td>
+        <td><?php echo $prodName ?></td>
+        <td><?php echo $size ?></td>
+        <td><?php echo $price ?></td>
+        <td><?php echo $qty ?></td>
+        <td>£<?php echo $subtotal ?></td>
+        <td><form method="post"><button value="<?php echo $i ?>" name="remove" class=" btn-danger">X</button></td>
+    </tr>
+    <?php } ?>
+    <tr>
+        <th scope="row"></th>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="table-secondary"><strong class="text-dark" style="padding-left: 70%">Total:</strong></td>
+        <td class="table-secondary"><strong class="text-dark" >£<?php echo $Total ?></strong></td>
+        <td class="table-secondary"></strong></td>
+    </tr>
+    </tbody>
+</table>
+    <form method="POST" action="">
+        <a class="btn btn-primary btn-lg btn-block" data-toggle="collapse" href="#multiCollapseExample1" role="button" aria-expanded="false" aria-controls="multiCollapseExample1">Proceed to Checkout</a>
+        <div class="row">
+
+            <div class="col">
+
+                <div class="collapse multi-collapse" id="multiCollapseExample1">
+                    <div class="card card-body">
+                        <h4 class="mb-3">Payment</h4>
+
+                        <div class="d-block my-3">
+                            <div class="custom-control custom-radio">
+                                <input id="credit" name="paymentMethod" type="radio" class="custom-control-input" checked required>
+                                <label class="custom-control-label" for="credit">Credit card</label>
+                            </div>
+                            <div class="custom-control custom-radio">
+                                <input id="debit" name="paymentMethod" type="radio" class="custom-control-input" required>
+                                <label class="custom-control-label" for="debit">Debit card</label>
+                            </div>
+
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cc-name">Name on card</label>
+                                <input type="text" class="form-control" id="cc-name" placeholder="" >
+                                <small class="text-muted">Full name as displayed on card</small>
+                                <div class="invalid-feedback">
+                                    Name on card is required
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="cc-number">Credit card number</label>
+                                <input type="text" class="form-control" id="cc-number" placeholder="">
+                                <div class="invalid-feedback">
+                                    Credit card number is required
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="cc-expiration">Expiration</label>
+                                <input type="month" class="form-control" id="cc-expiration" placeholder="" >
+                                <div class="invalid-feedback">
+                                    Expiration date required
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="cc-expiration">CVV</label>
+                                <input type="text" class="form-control" id="cc-cvv" placeholder="" >
+                                <div class="invalid-feedback">
+                                    Security code required
+                                </div>
+                            </div>
+
+                        </div>
+                        <hr>
+                        <center><input type="submit" name="buy" class=" w-50 btn btn-warning btn-lg" value="Checkout" /></center>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>
+<?php
+}else{
+    ?>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <h5 class="text-center"><strong>Please <a href="login.php">Log in</a> to view your Basket</strong></h5></>
+        </button>
+    </div>
+<?php
+} ?>
+
+
+
+
+
+
+
+
+
+
+<?php
+require('view/footer.phtml');
+?>

@@ -1,0 +1,276 @@
+<?php
+require ('view/header.phtml');
+
+
+$product = new products();
+$catInfo = $product->getProductCategory($_GET["categoryId"]);
+$prodInfo = $product->getProductInfo($_GET["productId"]);
+$shoeSizeInfo = $product->getSize($_GET["productId"]);
+
+$prodResult = $prodInfo->fetch(PDO::FETCH_ASSOC);
+$catResult = $catInfo->fetch(PDO::FETCH_ASSOC);
+
+$nShoeSize = $shoeSizeInfo->rowCount();
+
+$outOfStock = false;
+if ($prodResult['Quantity'] ==0){
+    $outOfStock = true;
+}
+
+if(isset($_GET["QTYn/a"]) && $_GET["QTYn/a"] == "true"){
+    ?>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Sorry you have missed out on <?php echo $prodResult['productTitle']." ".$prodResult['productSubtitle']?></strong>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <?php
+}
+
+if(isset($_POST['buy']) && $_POST['Quantity'] >0)
+{
+    if(isset($_SESSION['login'])){
+    $custInfo = $product->getCustomer($_SESSION['id']);
+    $custId = $custInfo->fetch(PDO::FETCH_ASSOC);
+    $totalPrice = $prodResult['Price']*$_POST['Quantity'];
+    $orderInfo = $product->addOrder($custId['customerId'], $totalPrice, $prodResult['productId'], $_POST['Quantity'],$_POST['Size']);
+
+
+      ?>
+            <script type="text/javascript">
+                window.location.href = 'checkoutSuccessful.php';
+            </script>
+            <?php
+    }
+     else{
+    ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Please <a href="login.php">Log in</a> to make a Purchase</strong>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+    <?php
+
+}
+    }
+if(isset($_POST['buy']) && $_POST['Quantity'] <=0){
+
+      ?>
+            <script type="text/javascript">
+                window.location.href = 'productView.php?productId=<?php echo $_GET["productId"] . "&categoryId=" . $_GET["categoryId"] ?>&QTYn/a=true';
+            </script>
+            <?php
+
+    }
+
+if(isset($_POST['basket']) && $_POST['Quantity']>0){
+    if(isset($_SESSION['login'])){
+    $product->addToBasket($_GET["productId"], $_POST['Quantity'], $_POST['Size']);
+      ?>
+            <script type="text/javascript">
+                window.location.href = 'productView.php?productId=<?php echo $_GET["productId"] . "&categoryId=" . $_GET["categoryId"] ?>';
+            </script>
+            <?php
+    }
+
+    else{
+    ?>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Please <a href="login.php">Log in</a> to add to Basket</strong>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+    <?php
+
+}
+}
+if(isset($_POST['basket']) && $_POST['Quantity']<=0){
+      ?>
+            <script type="text/javascript">
+                window.location.href = 'productView.php?productId=<?php echo $_GET["productId"] . "&categoryId=" . $_GET["categoryId"] ?>&QTYn/a=true';
+            </script>
+            <?php
+
+    }
+
+?>
+
+<form method="POST" action="">
+
+    <div class="form-group col-md-5">
+        <br><strong><h4 style="color: #4e555b"><?php echo $catResult['category'] . "/" . $catResult['subCategory'] ?></h4></strong><hr></div>
+<div class="form-row">
+
+    <div  class="form-group col-md-5">
+
+        <div style="z-index: 0" id="carouselExampleFade" class="carousel slide carousel-fade " data-ride="carousel" style="margin-left: 2%">
+            <div class="carousel-inner">
+
+                <?php
+
+                $activeImg = 0;
+                $imageCount = 0;
+
+                For ($i=0; $i<=3; $i++)
+                {
+                    $imageCount++;
+
+                    if ($activeImg ==0)
+                    {
+                        ?>
+
+                        <div class="carousel-item active">
+                            <img class="d-block w-100 h-25" src="<?php echo $prodResult['productImage'] . $imageCount ?>.webp" alt="First slide">
+                        </div>
+                        <?php $activeImg++;} else{?>
+                        <div class="carousel-item">
+                            <img class="d-block w-100 h-25" src="<?php echo $prodResult['productImage'] . $imageCount ?>.webp" alt="Second slide">
+                        </div>
+                    <?php } }?>
+            </div>
+            <a class="carousel-control-prev" href="#carouselExampleFade" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true" ></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#carouselExampleFade" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        </div>
+    </div>
+    <div class="form-group col-md-5">
+        <div class="card-body">
+            <h2 class="card-title"><?php echo $prodResult['productTitle']." ".$prodResult['productSubtitle'] ?></h2>
+            <h3 class="card-title"><?php echo "£".$prodResult['Price']?></h3>
+            <p class="card-text">
+                <?php echo $prodResult['productDescription'] ?>
+            </p>
+            <div class="form-group col-md-12">
+
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+
+                        <select name="Size" class="btn btn-secondary btn-block">
+                            <?php
+                            for ($i=0; $i<$nShoeSize; $i++)
+                            {
+                                $shoeSizeResult = $shoeSizeInfo->fetch(PDO::FETCH_ASSOC);
+                                $shoeSize = $shoeSizeResult['shoeSize'];
+                                ?>
+
+                                <option value="<?php echo $shoeSize ?>"><?php echo "SZ: ".$shoeSize ?></option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6">
+                        <select name="Quantity" class="btn btn-block btn-dark">
+
+                            <?php
+                            $prodQuantity = 0;
+                            if ($outOfStock)
+                            {?>
+                                <option value="0">N/A</option>
+
+                                <?php
+                            }
+                            else{
+
+                                for ($i=0; $i<$prodResult['Quantity']; $i++)
+                                {
+                                    $prodQuantity++;
+                                    ?>
+                                    <option value="<?php echo $prodQuantity ?>"><?php echo "Qty: ".$prodQuantity ?></option>
+                                <?php }} ?>
+                        </select>
+                    </div>
+
+
+                </div>
+
+                <input type="submit" name="basket" class="btn btn-info btn-block" value="Add to Basket" />
+
+
+                <a class="btn btn-warning btn-lg btn-block" data-toggle="collapse" href="#multiCollapseExample1" role="button" aria-expanded="false" aria-controls="multiCollapseExample1">Quick Buy</a>
+                <div class="row">
+
+                    <div class="col">
+
+                        <div class="collapse multi-collapse" id="multiCollapseExample1">
+                            <div class="card card-body">
+                                <?php if(isset($_SESSION['login'])) { ?>
+                                    <h4 class="mb-3">Payment</h4>
+
+                                    <div class="d-block my-3">
+                                        <div class="custom-control custom-radio">
+                                            <input id="credit" name="paymentMethod" type="radio" class="custom-control-input" checked required>
+                                            <label class="custom-control-label" for="credit">Credit card</label>
+                                        </div>
+                                        <div class="custom-control custom-radio">
+                                            <input id="debit" name="paymentMethod" type="radio" class="custom-control-input" required>
+                                            <label class="custom-control-label" for="debit">Debit card</label>
+                                        </div>
+
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="cc-name">Name on card</label>
+                                            <input type="text" class="form-control" id="cc-name" placeholder="" >
+                                            <small class="text-muted">Full name as displayed on card</small>
+                                            <div class="invalid-feedback">
+                                                Name on card is required
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="cc-number">Credit card number</label>
+                                            <input type="text" class="form-control" id="cc-number" placeholder="">
+                                            <div class="invalid-feedback">
+                                                Credit card number is required
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-3 mb-3">
+                                            <label for="cc-expiration">Expiration</label>
+                                            <input type="text" class="form-control" id="cc-expiration" placeholder="" >
+                                            <div class="invalid-feedback">
+                                                Expiration date required
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label for="cc-expiration">CVV</label>
+                                            <input type="text" class="form-control" id="cc-cvv" placeholder="" >
+                                            <div class="invalid-feedback">
+                                                Security code required
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <input type="submit" name="buy" class="btn btn-primary btn-lg btn-block" value="Checkout" />
+                                    </form>
+
+                                <?php } else { ?>
+                                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                        <strong>Please <a href="login.php">Log in</a> to Purchase</strong>
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                <?php } ?>
+                            </div>
+                            <!--                                </div>-->
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php
+
+
+require('view/footer.phtml');
+?>

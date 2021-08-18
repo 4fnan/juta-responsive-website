@@ -1,0 +1,47 @@
+<?php
+require('view/header.phtml');
+?>
+
+
+<div class="container">
+    <br>
+    <h4><?php echo $_GET["cat"]?>/<?php echo $_GET["subCat"]?></h4>
+    <hr>
+<div class="card-columns">
+    <div class="row" style="padding-right: 6%">
+    <?php
+    $catProducts = new products();
+    $products = $catProducts->getProducts($_GET["catId"],$_GET["cat"]);
+    $n = $products->rowCount();
+
+    for ($i=0; $i<$n; $i++) {
+        $result = $products->fetch(PDO::FETCH_ASSOC);
+        $prodId = $result['productId'];
+        $catId = $result['categoryId'];
+        $prodImg = $result['productImage'];
+        $prodTitle = $result['productTitle'];
+        $prodSubtitle = $result['productSubtitle'];
+        $prodSubtitle = substr($prodSubtitle,0,7) . "...";
+        $prodDescription = $result['productDescription'];
+        $prodDescription = substr($prodDescription,0,50) . "...";
+        $prodPrice = $result['Price'];
+    ?>
+<div class="card " style=""  >
+        <a href="productView.php?productId=<?php echo $prodId ?>&categoryId=<?php echo $catId ?>">
+            <img src="../<?php echo $prodImg  ?>1.webp" class="card-img-top" alt="...">
+        </a>
+        <div class="card-body" >
+            <a href="productView.php?productId=<?php echo $prodId ?>&categoryId=<?php echo $catId ?>">
+                <h5 class="card-title"><?php echo $prodTitle . " " . $prodSubtitle ?></h5>
+</a>
+<h5 class="card-title"><?php echo "£" . $prodPrice ?></h5>
+<p class="card-text" id="cardheight"><?php echo $prodDescription ?></p>
+<a href="productView.php?productId=<?php echo $prodId ?>&categoryId=<?php echo $catId ?>" class="btn btn-outline-primary btn-block">View</a>
+</div>
+</div>
+    <?php }?>
+</div>
+</div>
+</div>
+
+<?php require('view/footer.phtml');?>
